@@ -1,0 +1,109 @@
+# If you don't have rake then run:
+# "gem install rake" or "sudo gem install rake"
+
+# rake update:jquery
+
+# rake build:all
+# rake build:all[dev_build]
+# rake build:all[dev_build, 1]
+
+
+
+# configuration
+$root = ".."
+$build_dir = "#{$root}/builds"
+
+dev_deploy = "#{$root}/DEV_Deploy"
+js_dir  = "resources/js"
+css_dir = "resources/css"
+sass_dir = "#{css_dir}/src" 
+
+
+# == build ==
+namespace :build do
+  desc 'Build project - export deployment files to build folder'
+  # >> rake build:all
+  # or with specifying a build directory named 'dev_build'
+  # >> rake build:all[dev_build] 
+  # or to delete current build and rebuild
+  # >> rake build:all[dev_build, 1]
+  task :all, :build_dir_name, :overwrite do |t, args|
+    # make build directory
+    build_dir_name = create_build_dir("#{args.build_dir_name}", "#{args.overwrite}")
+    
+    puts 'Exporting project'      
+    target = "#{$build_dir}/#{build_dir_name}"
+    # copy all files from dev_deploy to target directory
+    dev_deploy_files = Dir.glob("#{dev_deploy}/*")
+    FileUtils.cp_r dev_deploy_files, target
+    
+    puts 'Removing sass source directory'
+    # remove sass src directory
+    FileUtils.rm_rf "#{target}/#{sass_dir}"
+    
+    puts 'Build complete'
+  end
+end
+
+
+# == update ==
+namespace :update do
+  desc 'Download latest version of jQuery to resources/js/jquery/'
+  # >> rake update:jquery
+  task :jquery do
+    puts 'Downloading jQuery...'
+    files = {
+      'jquery.js' => 'http://code.jquery.com/jquery-latest.min.js'
+    }
+    
+    require 'open-uri'
+    files.each do |local_path, remote_path|
+      f = File.open "#{js_dir}/jquery/#{local_path}", 'w' do |f|
+        f.write open(remote_path).read
+      end
+      puts 'Downloaded #{local_path} successfully.'
+    end
+    puts 'All Files downloaded successfully.'
+  end
+end    
+
+
+# == helpers methods ==
+def create_build_dir(dir_name=nil, overwrite=false)
+  current_build_dir_name = dir_name
+  
+  # if no directory name, then create one based on timestamp
+  if current_build_dir_name == nil || current_build_dir_name == ""
+    # http://snippets.dzone.com/posts/show/2255
+    t = Time.now
+    # HH:MM:{AM|PM}_MM_DD_YYYY
+    current_build_dir_name = t.strftime("%I%M%p_%m_%d_%Y")  
+  end
+  
+  # change to root directory
+  Dir.chdir("#{$root}");
+  
+  # check if build directory exists, if not create it
+  if !File.directory?("#{$build_dir}")
+    Dir.mkdir("#{$build_dir}")
+  end
+  
+  # change to build directory
+  Dir.chdir("#{$build_dir}")
+  
+  
+  
+  # current_build_dir_name already exists and we are overwritting it
+  # so delete it first and then recreate it
+  if File.directory?("#{current_build_dir_name}") && overwrite
+    puts 'Deleting existing build'
+    FileUtils.rm_rf "#{current_build_dir_name}"
+    Dir.mkdir("#{current_build_dir_name}")
+    
+  # build dir name doesn't exist -> create it
+  elsif !File.directory?("#{current_build_dir_name}")
+    Dir.mkdir("#{current_build_dir_name}")    
+  end
+  
+  return current_build_dir_name
+end
