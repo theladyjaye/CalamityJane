@@ -35,7 +35,7 @@ class Locate_script
 
   def find_files
     compiled_js_file_name = ""
-    Dir.glob("#{@root}/*.php") do |file|
+    Dir.glob("#{@root}/*.{php,html}") do |file|
       File.open(file, "r") do |infile|
         newFile = ""
         while (line = infile.gets)
