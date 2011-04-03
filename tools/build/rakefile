@@ -1,3 +1,5 @@
+require "locate_script.rb"
+
 # If you don't have rake then run:
 # "gem install rake" or "sudo gem install rake"
 
@@ -40,9 +42,13 @@ namespace :build do
     puts 'Removing sass source directory'
     # remove sass src directory
     FileUtils.rm_rf "#{target}/#{sass_dir}"
-    
+  
+    puts 'Compiling JS'
+    locate_script = Locate_script.new(File.expand_path(build_dir_name), File.expand_path(File.dirname(__FILE__)))
+    locate_script.compile
     puts 'Build complete'
   end
+  
 end
 
 
