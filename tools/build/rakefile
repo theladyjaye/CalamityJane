@@ -46,6 +46,11 @@ namespace :build do
     puts 'Compiling JS'
     locate_script = Locate_script.new(File.expand_path(build_dir_name), File.expand_path(File.dirname(__FILE__)))
     locate_script.compile
+    
+    # should we remove the source js files?
+    # maybe place all *.min.js files in a directory inside resources/js and remove everything else
+    
+    
     puts 'Build complete'
   end
   

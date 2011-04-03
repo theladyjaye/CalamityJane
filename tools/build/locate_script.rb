@@ -15,38 +15,46 @@ class Locate_script
     @root = root_path
     @compiler_path = compiler_path
     @compiled_out = "/resources/js/%compiled_file_name%.min.js"
-    @scripts = {}
   end
 
   def compile
-    compiled_js_file_name = find_files()
+    # get files
+    compiled_files = find_files()
     
-    command = "java -jar #{@compiler_path}/compiler.jar "
+    # compiled each file
+    compiled_files.each do | compiled_js_file_name, scripts |
+        command = "java -jar #{@compiler_path}/compiler.jar "
 
-    @scripts.each do | key, value |
-      command = command + "--js #{value} "
+        scripts.each do | key, value |
+            command = command + "--js #{value} "
+        end      
+
+        command = command + "--js_output_file " + @root + compiled_js_file_name
+    
+        # run shell command    
+        `#{command}`
     end
-
-    command = command + "--js_output_file " + @root + compiled_js_file_name
-    
-    # run shell command    
-    `#{command}`
   end
 
   def find_files
-    compiled_js_file_name = ""
+    # key = compiled_js_file_name
+    # value = scripts 
+    compiled_scripts = {} 
     Dir.glob("#{@root}/*.{php,html}") do |file|
       File.open(file, "r") do |infile|
         newFile = ""
+        scripts = {}
         while (line = infile.gets)
           candidate = line.strip()
 
+          # look for script tags
           if candidate.match(/^<script[^>]+><\/script>$/)
             src = line.match(/src="([^"]+)"/)[1]
             
             # check for inital slash. If present slash = '' else slash = '/'
             # Ruby... You look like Perl!
-            slash = /^\// =~  src ? '' : '/' # <-- what is going on here? removing initial slash?
+            # =~ is too much for me I'm taking this out
+            #slash = /^\// =~  src ? '' : '/' # <-- what is going on here? removing initial slash?
           
             # remove starting slash if exists
             # %r is regex
@@ -56,17 +64,21 @@ class Locate_script
             # better way to ensure no duplicates
             key = Digest::SHA1.hexdigest(File.read("#{@root}/#{src}"))
         
-            if !@scripts.has_key?(key)
-              @scripts[key] = "#{@root}/#{src}" #@root + slash + src
+            if !scripts.has_key?(key)
+              scripts[key] = "#{@root}/#{src}" #@root + slash + src
             end
           else
             newFile = newFile + line
-          end
+          end          
         end
-    
+            
         # create compiled js file name for current file
         compiled_js_file_name = compiled_js_file(file)
         
+        # add it to collection
+        compiled_scripts[compiled_js_file_name] = scripts
+        
+        # update file with compiled js include
         parts = newFile.split("</body>")
         parts[0] = parts[0] + "\t<script src=\"#{compiled_js_file_name}\"></script>\n"
         newFile =  parts.join("</body>\n")
@@ -77,7 +89,7 @@ class Locate_script
       end
     end
     
-    return compiled_js_file_name
+    return compiled_scripts
   end
   
   def compiled_js_file(file)
