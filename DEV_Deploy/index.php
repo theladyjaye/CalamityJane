@@ -10,6 +10,12 @@
 	<!-- intentionally placing at top to test top and bottom placement -->
 	<script src="/resources/js/modules/project.advertisement.js"></script>
 	<script src="/resources/js/modules/project.services.js"></script>
+	<script src="/resources/js/jquery/jquery.js"></script>
+	<script type ="text/javascript">
+	$(function(){
+		console.log("hi")
+	})
+	</script>
 	<!-- Date: 2011-04-02 -->
 </head>
 <body>
