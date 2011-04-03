@@ -11,10 +11,13 @@ Dir.glob(root + "/*.php") do |file|
       
       if candidate.match(/^<script[^>]+><\/script>$/)
         src = line.match(/src="([^"]+)"/)[1]
-        key = Digest::SHA1.hexdigest(src)
+        slash = /^\// =~  src ? '' : '/'
+        
+        # hash off the contents of the entire file not the filename
+        # better way to ensure no duplicates
+        key = Digest::SHA1.hexdigest(File.read(root + slash + src))
         
         if !scripts.has_key?(key)
-          slash = /^\// =~  src ? '' : '/'
           scripts[key] = root + slash + src
         end
       else
