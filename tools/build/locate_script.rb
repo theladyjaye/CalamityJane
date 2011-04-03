@@ -1,4 +1,5 @@
 require 'digest/sha1'
+require 'yaml'
 
 =begin
 
@@ -15,6 +16,12 @@ class Locate_script
     @root = root_path
     @compiler_path = compiler_path
     @compiled_out = "/resources/js/%compiled_file_name%.min.js"
+    
+    @script_config = begin
+      YAML.load(File.open("#{@compiler_path}/scriptconfig"))
+    rescue ArgumentError => e
+      puts "Could not parse scriptcofig: #{e.message}"
+    end
   end
 
   def compile
@@ -43,29 +50,47 @@ class Locate_script
     Dir.glob("#{@root}/*.{php,html}") do |file|
       File.open(file, "r") do |infile|
         newFile = ""
-        scripts = {}
+        scripts = {"compile" => {}, 
+                   "ignore" => []}
         while (line = infile.gets)
           candidate = line.strip()
 
           # look for script tags
           if candidate.match(/^<script[^>]+><\/script>$/)
             src = line.match(/src="([^"]+)"/)[1]
-            
-            # check for inital slash. If present slash = '' else slash = '/'
-            # Ruby... You look like Perl!
-            # =~ is too much for me I'm taking this out
-            #slash = /^\// =~  src ? '' : '/' # <-- what is going on here? removing initial slash?
           
             # remove starting slash if exists
             # %r is regex
-            src = src.sub!(%r{^\/}, "")             
+            src = src.sub!(%r{^\/}, "")
             
-            # hash off the contents of the entire file not the filename
-            # better way to ensure no duplicates
-            key = Digest::SHA1.hexdigest(File.read("#{@root}/#{src}"))
-        
-            if !scripts.has_key?(key)
-              scripts[key] = "#{@root}/#{src}" #@root + slash + src
+            add_to_compile_list = true
+            
+            # check if our candidate script should be ignored
+            @script_config["ignore"].each do |script_src|
+              script_src.sub!(%r{^\/}, "")
+              
+              if script_src == src
+                add_to_compile_list = false
+                break
+              end
+              
+            end
+            
+            if add_to_compile_list
+              # hash off the contents of the entire file not the filename
+              # better way to ensure no duplicates
+              key = Digest::SHA1.hexdigest(File.read("#{@root}/#{src}"))
+              
+              if !scripts["compile"].has_key?(key)
+                scripts["compile"][key] = "#{@root}/#{src}" #@root + slash + src
+              end
+            else
+                # no filename duplicates in ignores
+                # ignores will be used to populate <script></script> elements
+                # and duplicates would be unwarrented
+                if scripts["ignore"].include?("/#{src}") == false
+                  scripts["ignore"].push("/#{src}")
+                end
             end
           else
             newFile = newFile + line
@@ -76,10 +101,16 @@ class Locate_script
         compiled_js_file_name = compiled_js_file(file)
         
         # add it to collection
-        compiled_scripts[compiled_js_file_name] = scripts
+        compiled_scripts[compiled_js_file_name] = scripts["compile"]
         
         # update file with compiled js include
         parts = newFile.split("</body>")
+        
+        # add in the files that were ignored during compilation
+        scripts["ignore"].each do |script_src|
+          parts[0] = parts[0] + "\t<script src=\"#{script_src}\"></script>\n"
+        end
+        
         parts[0] = parts[0] + "\t<script src=\"#{compiled_js_file_name}\"></script>\n"
         newFile =  parts.join("</body>\n")
         

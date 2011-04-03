@@ -1,0 +1,4 @@
+---
+    ignore:
+        - /resources/js/jquery/jquery.js
+        - /foo/bar/baz.js
