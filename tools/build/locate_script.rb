@@ -43,6 +43,9 @@ class Locate_script
 
           if candidate.match(/^<script[^>]+><\/script>$/)
             src = line.match(/src="([^"]+)"/)[1]
+            
+            # check for inital slash. If present slash = '' else slash = '/'
+            # Ruby... You look like Perl!
             slash = /^\// =~  src ? '' : '/' # <-- what is going on here? removing initial slash?
           
             # remove starting slash if exists
