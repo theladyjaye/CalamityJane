@@ -37,7 +37,7 @@ class Locate_script
         end      
 
         command = command + "--js_output_file " + @root + compiled_js_file_name
-    
+        puts command
         # run shell command    
         `#{command}`
     end
@@ -45,8 +45,9 @@ class Locate_script
 
   def find_files
     # key = compiled_js_file_name
-    # value = scripts 
-    compiled_scripts = {} 
+    # value = scripts
+    compiled_scripts = {}
+    
     Dir.glob("#{@root}/*.{php,html}") do |file|
       File.open(file, "r") do |infile|
         newFile = ""
@@ -104,6 +105,8 @@ class Locate_script
           end          
         end
             
+        # ok I broke something here, or am not understanding the idea..
+        
         # create compiled js file name for current file
         compiled_js_file_name = compiled_js_file(file)
         
@@ -131,8 +134,15 @@ class Locate_script
   end
   
   def compiled_js_file(file)
-    basename_with_rand = File.basename(file, '.*') + "-" + rand_num
+    
+    if @script_config.has_key?("compiled_file_name")
+      basename_with_rand = @script_config["compiled_file_name"]
+    else
+      basename_with_rand = File.basename(file, '.*') + "-" + rand_num
+    end
+    
     return @compiled_out.gsub("%compiled_file_name%", basename_with_rand)
+    
   end
     
   # just need a random number to prevent conflicts in compiled js files

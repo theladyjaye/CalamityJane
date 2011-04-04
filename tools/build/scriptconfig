@@ -2,3 +2,4 @@
     ignore:
         - /resources/js/jquery/jquery.js
         - /foo/bar/baz.js
+    compiled_file_name: project-name
