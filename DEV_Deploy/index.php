@@ -35,5 +35,6 @@
 	<script src="/resources/js/jquery/jquery.js"></script>
 	<!-- Date: 2011-04-02 -->
 	<script src="/resources/js/application/application.main.js"></script>
+	<script src="http://domain.com/remote/somescript.js"></script>
 </body>
 </html>

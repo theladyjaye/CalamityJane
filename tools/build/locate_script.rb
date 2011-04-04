@@ -58,22 +58,27 @@ class Locate_script
           # look for script tags
           if candidate.match(/^<script[^>]+><\/script>$/)
             src = line.match(/src="([^"]+)"/)[1]
-          
+            
             # remove starting slash if exists
             # %r is regex
-            src = src.sub!(%r{^\/}, "")
+            # removed src = as .sub! is an in-place operation 
+            src.sub!(%r{^\/}, "")
+            
             
             add_to_compile_list = true
             
-            # check if our candidate script should be ignored
-            @script_config["ignore"].each do |script_src|
-              script_src.sub!(%r{^\/}, "")
+            if /^http:\/\//.match(src)
+              add_to_compile_list = false
+            else
+              # check if our candidate script should be ignored
+              @script_config["ignore"].each do |script_src|
+                script_src.sub!(%r{^\/}, "")
               
-              if script_src == src
-                add_to_compile_list = false
-                break
+                if script_src == src
+                  add_to_compile_list = false
+                  break
+                end
               end
-              
             end
             
             if add_to_compile_list
@@ -88,8 +93,10 @@ class Locate_script
                 # no filename duplicates in ignores
                 # ignores will be used to populate <script></script> elements
                 # and duplicates would be unwarrented
-                if scripts["ignore"].include?("/#{src}") == false
-                  scripts["ignore"].push("/#{src}")
+                search = /^http:\/\//.match(src) ? src : "/#{src}"
+                
+                if scripts["ignore"].include?(search) == false
+                  scripts["ignore"].push(search)
                 end
             end
           else
