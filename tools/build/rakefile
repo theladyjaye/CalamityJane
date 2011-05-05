@@ -1,7 +1,11 @@
 require "locate_script.rb"
+require "script_watcher.rb"
 
 # If you don't have rake then run:
 # "gem install rake" or "sudo gem install rake"
+
+# if you don't have fssm then run:
+# "gem install fssm" or "sudo gem install fssm"
 
 # rake update:jquery
 
@@ -20,6 +24,8 @@ js_dir  = "resources/js"
 css_dir = "resources/css"
 sass_dir = "#{css_dir}/src" 
 
+# rake build calls rake build:all
+task :build => ["build:all"]
 
 # == build ==
 namespace :build do
@@ -31,7 +37,8 @@ namespace :build do
   # >> rake build:all[dev_build, 1]
   task :all, :build_dir_name, :overwrite do |t, args|
     # make build directory
-    build_dir_name = create_build_dir("#{args.build_dir_name}", "#{args.overwrite}")
+    #build_dir_name = create_build_dir("#{args.build_dir_name}", "#{args.overwrite}")
+    build_dir_name = create_build_dir("dev", "#{args.overwrite}")
     
     puts 'Exporting project'      
     target = "#{$build_dir}/#{build_dir_name}"
@@ -43,19 +50,37 @@ namespace :build do
     # remove sass src directory
     FileUtils.rm_rf "#{target}/#{sass_dir}"
   
-    puts 'Compiling JS'
-    locate_script = Locate_script.new(File.expand_path(build_dir_name), File.expand_path(File.dirname(__FILE__)))
-    locate_script.compile
+    compile_js(build_dir_name)
+    puts 'expand file'
+    puts File.expand_path(build_dir_name)
+    #puts 'Compiling JS'    
+    #locate_script = Locate_script.new(File.expand_path(build_dir_name), File.expand_path(File.dirname(__FILE__)))
+    #locate_script.compile
     
     # should we remove the source js files?
     # maybe place all *.min.js files in a directory inside resources/js and remove everything else
     
-    
+    #delete_hidden_files(File.expand_path(build_dir_name))
+      
     puts 'Build complete'
   end
   
 end
 
+# == watch ==
+namespace :watch do
+  desc 'Watches for changes to Javascript files to automatically recompile'
+  task :js do
+    puts 'Watching Javascript'
+    watch_js("../#{dev_deploy}/#{js_dir}")
+  end
+  
+  desc 'Initialize watch for sass'
+  task :css do
+    puts 'Watching Sass'
+    # todo add in call to sass.bat or sass.command or remove those and consolidate it to rakefile
+  end
+end
 
 # == update ==
 namespace :update do
@@ -80,6 +105,35 @@ end
 
 
 # == helpers methods ==
+=begin
+
+errors saying: no such file or directory .sass-cache/.
+
+We want to remove all hidden files (.svn, .DS_Store, .sass-*)
+
+def delete_hidden_files(dir)
+  Dir.glob("#{dir}/**/*", File::FNM_DOTMATCH).each do | file |
+    next if file.eql?(".") or file.eql?("..")
+    if file.match(/(.svn|.DS_Store|.sass-.*)$/)
+      if File.directory? file
+        puts 'deleting: ' + file
+        FileUtils.rm_rf file
+      else
+        FileUtils.rm file
+      end
+    end
+  end
+end
+=end
+
+
+def compile_js(path)
+  puts 'Compiling JS'
+  locate_script = Locate_script.new(File.expand_path(path), File.expand_path(File.dirname(__FILE__)))
+  locate_script.compile
+  puts 'Compilation Complete'
+end
+
 def create_build_dir(dir_name=nil, overwrite=false)
   current_build_dir_name = dir_name
   

@@ -27,7 +27,7 @@ class Locate_script
   def compile
     # get files
     compiled_files = find_files()
-    
+
     # compiled each file
     compiled_files.each do | compiled_js_file_name, scripts |
         command = "java -jar #{@compiler_path}/compiler.jar "
@@ -47,9 +47,11 @@ class Locate_script
     # key = compiled_js_file_name
     # value = scripts
     compiled_scripts = {}
-    
+        
     Dir.glob("#{@root}/*.{php,html}") do |file|
       File.open(file, "r") do |infile|
+        puts 'adkadfkjadsf'
+        puts infile
         newFile = ""
         scripts = {"compile" => {}, 
                    "ignore" => []}
